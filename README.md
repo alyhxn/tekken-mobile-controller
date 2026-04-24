@@ -2,8 +2,7 @@
 
 A lightweight, browser-based multiplayer setup for Tekken 3. This project turns your desktop browser into an arcade machine using EmulatorJS, while instantly transforming your mobile devices into wireless gamepads via WebRTC. All of this is achieved without a backend server, using PeerJS for peer-to-peer communication.
 
-> 🖼️ **[PLACEHOLDER: Insert your screenshot here]**
-> *Use markdown to add your image: `![Tekken 3 Gameplay and Mobile Controller](./path/to/screenshot.png)`*
+![Tekken 3 Gameplay and Mobile Controller](/demo.png)
 
 ### Live Demo
 **Play here:** [https://alyhxn.github.io/tekken-mobile-controller/](https://alyhxn.github.io/tekken-mobile-controller/)
