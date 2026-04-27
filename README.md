@@ -4,6 +4,8 @@ A lightweight, browser-based multiplayer setup for Tekken 3. This project turns 
 
 ![Tekken 3 Gameplay and Mobile Controller](/demo.png)
 
+![Tekken 3 Mobile Controller](/controller.png)
+
 ### Live Demo
 **Play here:** [https://alyhxn.github.io/tekken-mobile-controller/](https://alyhxn.github.io/tekken-mobile-controller/)
 
