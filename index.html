@@ -6,6 +6,7 @@
     <title>Tekken 3 - Multiplayer WebRTC Controller</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
     <style>
         body {
             background-color: #121212;
@@ -28,10 +29,9 @@
             align-items: center;
             justify-content: center;
             height: 100vh;
-            gap: 40px; /* Space between game and QR side panels */
+            gap: 40px;
         }
         
-        /* Side panels for QR codes */
         .side-panel {
             display: flex;
             flex-direction: column;
@@ -40,7 +40,6 @@
             padding: 25px;
             border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            /* We use visibility instead of display:none so the game doesn't shift when a panel hides */
             visibility: visible; 
             transition: opacity 0.5s ease;
             width: 180px;
@@ -78,6 +77,9 @@
                 height: 100dvw;
                 transform: translate(-50%, -50%) rotate(90deg); 
             }
+            #joystick-ui {
+                transform: rotate(-90deg);
+            }
         }
         .controller-row {
             display: flex;
@@ -86,10 +88,26 @@
             width: 100%;
         }
         
+        /* Movement Wrapper (Holds both D-Pad and Joystick) */
+        .movement-wrapper {
+            position: relative;
+            width: 263px; /* 3 cols of 85px + 2 gaps of 4px */
+            height: 174px; /* 2 rows of 85px + 1 gap of 4px */
+        }
+
         .d-pad, .action-buttons {
             display: grid;
             grid-template-columns: repeat(3, 85px); 
             grid-gap: 4px; 
+        }
+
+        #joystick-ui {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: none; /* Hidden by default */
         }
         
         .btn {
@@ -128,6 +146,27 @@
             -webkit-tap-highlight-color: transparent;
         }
         #fullscreenToggle:active { background: #d32f2f; border-color: white; }
+
+        #toggleInputBtn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            height: 40px;
+            padding: 0 15px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid #555;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            z-index: 1000;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        #toggleInputBtn:active { background: #555; border-color: white; }
         
         .up { grid-column: 2; grid-row: 1; }
         .left { grid-column: 1; grid-row: 2; }
@@ -174,15 +213,20 @@
     </div>
 
     <div id="mobile-controller">
+        <div id="toggleInputBtn" onclick="toggleInputMethod()">🕹️ Use Joystick</div>
         <div id="fullscreenToggle" onclick="toggleFullScreen()">⛶</div>
         <h2 id="mobileTitle" style="text-align: center; margin: 0; padding-top: 10px;">Tekken 3 Controller</h2>
         
         <div class="controller-row">
-            <div class="d-pad">
-                <div class="btn up" onpointerdown="sendInput('UP', 'keydown')" onpointerup="sendInput('UP', 'keyup')" onpointercancel="sendInput('UP', 'keyup')">↑</div>
-                <div class="btn left" onpointerdown="sendInput('LEFT', 'keydown')" onpointerup="sendInput('LEFT', 'keyup')" onpointercancel="sendInput('LEFT', 'keyup')">←</div>
-                <div class="btn right" onpointerdown="sendInput('RIGHT', 'keydown')" onpointerup="sendInput('RIGHT', 'keyup')" onpointercancel="sendInput('RIGHT', 'keyup')">→</div>
-                <div class="btn down" onpointerdown="sendInput('DOWN', 'keydown')" onpointerup="sendInput('DOWN', 'keyup')" onpointercancel="sendInput('DOWN', 'keyup')">↓</div>
+            
+            <div class="movement-wrapper">
+                <div class="d-pad" id="dpad-ui">
+                    <div class="btn up" onpointerdown="sendInput('UP', 'keydown')" onpointerup="sendInput('UP', 'keyup')" onpointercancel="sendInput('UP', 'keyup')">↑</div>
+                    <div class="btn left" onpointerdown="sendInput('LEFT', 'keydown')" onpointerup="sendInput('LEFT', 'keyup')" onpointercancel="sendInput('LEFT', 'keyup')">←</div>
+                    <div class="btn right" onpointerdown="sendInput('RIGHT', 'keydown')" onpointerup="sendInput('RIGHT', 'keyup')" onpointercancel="sendInput('RIGHT', 'keyup')">→</div>
+                    <div class="btn down" onpointerdown="sendInput('DOWN', 'keydown')" onpointerup="sendInput('DOWN', 'keyup')" onpointercancel="sendInput('DOWN', 'keyup')">↓</div>
+                </div>
+                <div id="joystick-ui"></div>
             </div>
             
             <div class="center-controls">
@@ -205,7 +249,6 @@
         const joinId = urlParams.get('join');
         const playerNum = urlParams.get('p') || '1'; 
 
-        // Define separate key mappings for Player 1 and Player 2
         const keyMap = {
             '1': {
                 'UP': { key: 'ArrowUp', keyCode: 38 },
@@ -248,7 +291,6 @@
             titleEl.style.color = playerNum === '1' ? '#4CAF50' : '#2196F3';
 
             peer.on('open', () => {
-                // Pass player number as metadata so the host instantly knows who is connecting
                 connection = peer.connect(joinId, { metadata: { player: playerNum } });
                 
                 connection.on('open', () => {
@@ -275,6 +317,85 @@
                 if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(e => {});
             }, { once: true });
 
+            // --- JOYSTICK LOGIC ---
+            let joystickInstance;
+            let activeJoyKeys = new Set();
+            const joyThreshold = 0.35; // Lower = triggers earlier. Good for 8-way diagonals
+
+            function initJoystick() {
+                joystickInstance = nipplejs.create({
+                    zone: document.getElementById('joystick-ui'),
+                    mode: 'static',
+                    position: { left: '50%', top: '50%' },
+                    color: 'white',
+                    size: 130
+                });
+
+                joystickInstance.on('move', (evt, data) => {
+                    if (!data.vector) return;
+                    
+                    const newKeys = new Set();
+                    
+                    // NippleJS Vector mapping: X is standard (positive right), Y is inverted standard (positive UP)
+                    if(window.innerHeight > window.innerWidth){
+                        if (data.vector.x > joyThreshold) newKeys.add('UP');
+                        if (data.vector.x < -joyThreshold) newKeys.add('DOWN');
+                        if (data.vector.y > joyThreshold) newKeys.add('LEFT');
+                        if (data.vector.y < -joyThreshold) newKeys.add('RIGHT');
+                    }
+                    else{
+                        if (data.vector.x > joyThreshold) newKeys.add('RIGHT');
+                        if (data.vector.x < -joyThreshold) newKeys.add('LEFT');
+                        if (data.vector.y > joyThreshold) newKeys.add('UP');
+                        if (data.vector.y < -joyThreshold) newKeys.add('RIGHT');
+                    }
+                    // Fire KeyDown for newly pressed directions
+                    newKeys.forEach(key => {
+                        if (!activeJoyKeys.has(key)) sendInput(key, 'keydown');
+                    });
+
+                    // Fire KeyUp for directions we left
+                    activeJoyKeys.forEach(key => {
+                        if (!newKeys.has(key)) sendInput(key, 'keyup');
+                    });
+
+                    activeJoyKeys = newKeys;
+                });
+
+                joystickInstance.on('end', () => {
+                    activeJoyKeys.forEach(key => sendInput(key, 'keyup'));
+                    activeJoyKeys.clear();
+                });
+            }
+
+
+            // Toggle function for the UI button
+            window.toggleInputMethod = function() {
+                const dpad = document.getElementById('dpad-ui');
+                const joy = document.getElementById('joystick-ui');
+                const btn = document.getElementById('toggleInputBtn');
+
+                if (dpad.style.display !== 'none') {
+                    // Switch to Joystick
+                    dpad.style.display = 'none';
+                    joy.style.display = 'block';
+                    btn.innerText = '➕ Use D-Pad';
+                    
+                    // CRITICAL FIX: Initialize the joystick ONLY AFTER it is visible
+                    if (!joystickInstance) {
+                        initJoystick();
+                    }
+                } else {
+                    // Switch back to D-Pad
+                    dpad.style.display = 'grid'; 
+                    joy.style.display = 'none';
+                    btn.innerText = '🕹️ Use Joystick';
+                    
+                    // Cleanup any stuck inputs when switching away
+                    activeJoyKeys.forEach(key => sendInput(key, 'keyup'));
+                    activeJoyKeys.clear();
+                }
+            };
         } else {
             // ==========================================
             // HOST LOGIC (LAPTOP / EMULATOR)
@@ -291,13 +412,10 @@
                     text: linkP2, width: 150, height: 150, colorDark: "#000000", colorLight: "#ffffff"
                 });
 
-                // Handle multiple connections
                 peer.on('connection', (conn) => {
-                    // Extract player number from the connection metadata
                     const pNum = conn.metadata ? conn.metadata.player : null;
 
                     conn.on('open', () => {
-                        // Fade out the respective QR panel, but keep its physical space so the game doesn't shift
                         if (pNum === '1') {
                             const p1Panel = document.getElementById('side-p1');
                             p1Panel.style.opacity = '0';
@@ -346,35 +464,33 @@
                 targetElement.dispatchEvent(event);
             }
 
-            // --- AUTOMATICALLY MAP PLAYER 1 & 2 CONTROLS ---
             window.EJS_defaultControls = {
-                0: { // Player 1
-                    0: { value: 'x' },         // Cross
-                    1: { value: 'z' },         // Square
-                    2: { value: 'Shift' },     // Select
-                    3: { value: 'Enter' },     // Start
-                    4: { value: 'up arrow' },   // Up
-                    5: { value: 'down arrow' }, // Down
-                    6: { value: 'left arrow' }, // Left
-                    7: { value: 'right arrow' },// Right
-                    8: { value: 's' },         // Circle
-                    9: { value: 'a' }          // Triangle
+                0: { 
+                    0: { value: 'x' },         
+                    1: { value: 'z' },         
+                    2: { value: 'Shift' },     
+                    3: { value: 'Enter' },     
+                    4: { value: 'up arrow' },   
+                    5: { value: 'down arrow' }, 
+                    6: { value: 'left arrow' }, 
+                    7: { value: 'right arrow' },
+                    8: { value: 's' },         
+                    9: { value: 'a' }          
                 },
-                1: { // Player 2
-                    0: { value: 'g' }, // Cross
-                    1: { value: 'f' }, // Square
-                    2: { value: 'b' }, // Select
-                    3: { value: 'v' }, // Start
-                    4: { value: 'i' }, // Up
-                    5: { value: 'k' }, // Down
-                    6: { value: 'j' }, // Left
-                    7: { value: 'l' }, // Right
-                    8: { value: 'h' }, // Circle
-                    9: { value: 't' }  // Triangle
+                1: { 
+                    0: { value: 'g' }, 
+                    1: { value: 'f' }, 
+                    2: { value: 'b' }, 
+                    3: { value: 'v' }, 
+                    4: { value: 'i' }, 
+                    5: { value: 'k' }, 
+                    6: { value: 'j' }, 
+                    7: { value: 'l' }, 
+                    8: { value: 'h' }, 
+                    9: { value: 't' }  
                 }
             };
 
-            // --- INITIALIZE EMULATOR JS ---
             window.EJS_player = '#game-container'; 
             window.EJS_core = 'psx';               
             window.EJS_gameName = 'Tekken 3';      
