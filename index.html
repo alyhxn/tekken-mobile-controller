@@ -40,15 +40,35 @@
             padding: 25px;
             border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            visibility: visible; 
-            transition: opacity 0.5s ease;
-            width: 180px;
+            width: 220px;
         }
-        .side-panel h3 { margin-top: 0; margin-bottom: 5px; font-size: 24px; }
+        .side-panel h3 { margin-top: 0; margin-bottom: 5px; font-size: 20px; }
         .side-panel p { margin-bottom: 20px; font-size: 14px; text-align: center; color: #aaa; }
         
+        .status-container {
+            margin-top: 20px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .player-status {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+        }
+
         .p1-color { color: #4CAF50; }
         .p2-color { color: #2196F3; }
+
+        #qrcode {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+        }
 
         #game-container {
             width: 800px;
@@ -86,19 +106,29 @@
             justify-content: space-between;
             align-items: center;
             width: 100%;
+            opacity: 0.5;
+            pointer-events: none; /* Disabled until assigned */
+            transition: opacity 0.3s;
+        }
+        .controller-row.active {
+            opacity: 1;
+            pointer-events: all;
         }
         
-        /* Movement Wrapper (Holds both D-Pad and Joystick) */
+        /* Movement Wrapper */
         .movement-wrapper {
             position: relative;
-            width: 263px; /* 3 cols of 85px + 2 gaps of 4px */
-            height: 174px; /* 2 rows of 85px + 1 gap of 4px */
+            width: 263px;
+            height: 174px; 
         }
 
         .d-pad, .action-buttons {
             display: grid;
             grid-template-columns: repeat(3, 85px); 
             grid-gap: 4px; 
+        }
+        .action-buttons{
+            grid-template-columns: repeat(2, 85px); 
         }
 
         #joystick-ui {
@@ -107,7 +137,7 @@
             position: absolute;
             top: 0;
             left: 0;
-            display: none; /* Hidden by default */
+            display: none; 
         }
         
         .btn {
@@ -127,45 +157,23 @@
         }
         .btn:active { background: #fff; color: #000; }
         
-        #fullscreenToggle {
+        #fullscreenToggle, #toggleInputBtn {
             position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 40px;
-            height: 40px;
             background: rgba(255, 255, 255, 0.15);
             border: 2px solid #555;
             border-radius: 8px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 20px;
             color: white;
             z-index: 1000;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
         }
+        #fullscreenToggle { top: 20px; right: 20px; width: 40px; height: 40px; font-size: 20px; }
         #fullscreenToggle:active { background: #d32f2f; border-color: white; }
 
-        #toggleInputBtn {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            height: 40px;
-            padding: 0 15px;
-            background: rgba(255, 255, 255, 0.15);
-            border: 2px solid #555;
-            border-radius: 8px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 16px;
-            font-weight: bold;
-            color: white;
-            z-index: 1000;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
+        #toggleInputBtn { top: 20px; left: 20px; height: 40px; padding: 0 15px; font-size: 16px; font-weight: bold; }
         #toggleInputBtn:active { background: #555; border-color: white; }
         
         .up { grid-column: 2; grid-row: 1; }
@@ -173,10 +181,10 @@
         .right { grid-column: 3; grid-row: 2; }
         .down { grid-column: 2; grid-row: 2; }
         
-        .triangle { grid-column: 2; grid-row: 1; }
-        .square { grid-column: 1; grid-row: 2; }
-        .circle { grid-column: 3; grid-row: 2; }
-        .cross { grid-column: 2; grid-row: 2; }
+        .triangle { grid-column: 1; grid-row: 1; }
+        .square { grid-column: 2; grid-row: 1; }
+        .circle { grid-column: 2; grid-row: 2; }
+        .cross { grid-column: 1; grid-row: 2; }
 
         .center-controls {
             display: flex;
@@ -186,38 +194,38 @@
             margin: 0 auto;
         }
 
-        .pill-btn {
-            width: 100px;
-            height: 45px;
-            border-radius: 25px;
-            font-size: 16px;
-        }
+        .pill-btn { width: 100px; height: 45px; border-radius: 25px; font-size: 16px; }
     </style>
 </head>
 <body>
 
     <div id="host-container">
-        <div id="side-p1" class="side-panel">
-            <h3 class="p1-color">Player 1</h3>
-            <p>Scan to connect</p>
-            <div id="qrcode-p1"></div>
+        <div class="side-panel">
+            <h3>Join Game</h3>
+            <p>Scan to connect controllers</p>
+            <div id="qrcode"></div>
+            
+            <div class="status-container">
+                <div class="player-status p1-color">
+                    <span>Player 1</span>
+                    <span id="status-p1">Waiting...</span>
+                </div>
+                <div class="player-status p2-color">
+                    <span>Player 2</span>
+                    <span id="status-p2">Waiting...</span>
+                </div>
+            </div>
         </div>
         
         <div id="game-container"></div>
-        
-        <div id="side-p2" class="side-panel">
-            <h3 class="p2-color">Player 2</h3>
-            <p>Scan to connect</p>
-            <div id="qrcode-p2"></div>
-        </div>
     </div>
 
     <div id="mobile-controller">
         <div id="toggleInputBtn" onclick="toggleInputMethod()">🕹️ Use Joystick</div>
         <div id="fullscreenToggle" onclick="toggleFullScreen()">⛶</div>
-        <h2 id="mobileTitle" style="text-align: center; margin: 0; padding-top: 10px;">Tekken 3 Controller</h2>
+        <h2 id="mobileTitle" style="text-align: center; margin: 0; padding-top: 10px; color: #aaa;">Connecting to Host...</h2>
         
-        <div class="controller-row">
+        <div class="controller-row" id="controllerArea">
             
             <div class="movement-wrapper">
                 <div class="d-pad" id="dpad-ui">
@@ -247,7 +255,13 @@
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const joinId = urlParams.get('join');
-        const playerNum = urlParams.get('p') || '1'; 
+        
+        // Host state
+        let availableSlots = [1, 2];
+        let activeClients = {}; // Maps peerId -> playerNum
+
+        // Client state
+        let myPlayerNum = null;
 
         const keyMap = {
             '1': {
@@ -285,23 +299,38 @@
             // ==========================================
             document.getElementById('host-container').style.display = 'none';
             document.getElementById('mobile-controller').style.display = 'flex';
-            
-            const titleEl = document.getElementById('mobileTitle');
-            titleEl.innerText = `Tekken 3 Controller - Player ${playerNum}`;
-            titleEl.style.color = playerNum === '1' ? '#4CAF50' : '#2196F3';
 
             peer.on('open', () => {
-                connection = peer.connect(joinId, { metadata: { player: playerNum } });
+                connection = peer.connect(joinId); // Connect without requesting a specific player
                 
                 connection.on('open', () => {
-                    console.log(`Connected to laptop as Player ${playerNum}!`);
-                    if (navigator.vibrate) navigator.vibrate([100, 50, 100]); 
+                    console.log(`Connected to host, awaiting assignment...`);
+                });
+
+                connection.on('data', (data) => {
+                    // Host assigns us a player number
+                    if (data.action === 'assign_player') {
+                        myPlayerNum = data.playerNum.toString();
+                        
+                        // Update UI
+                        const titleEl = document.getElementById('mobileTitle');
+                        titleEl.innerText = `Tekken 3 Controller - Player ${myPlayerNum}`;
+                        titleEl.style.color = myPlayerNum === '1' ? '#4CAF50' : '#2196F3';
+                        document.getElementById('controllerArea').classList.add('active');
+
+                        if (navigator.vibrate) navigator.vibrate([100, 50, 100]); 
+                    } 
+                    else if (data.action === 'full') {
+                        document.getElementById('mobileTitle').innerText = "Game is Full!";
+                        document.getElementById('mobileTitle').style.color = "#d32f2f";
+                    }
                 });
             });
 
             window.sendInput = function(btnName, eventType) {
-                if (connection && connection.open) {
-                    connection.send({ player: playerNum, button: btnName, type: eventType });
+                if (connection && connection.open && myPlayerNum) {
+                    // No need to send our player number, the host tracks it via our connection ID
+                    connection.send({ button: btnName, type: eventType });
                 }
             };
 
@@ -320,7 +349,7 @@
             // --- JOYSTICK LOGIC ---
             let joystickInstance;
             let activeJoyKeys = new Set();
-            const joyThreshold = 0.35; // Lower = triggers earlier. Good for 8-way diagonals
+            const joyThreshold = 0.35; 
 
             function initJoystick() {
                 joystickInstance = nipplejs.create({
@@ -333,32 +362,26 @@
 
                 joystickInstance.on('move', (evt, data) => {
                     if (!data.vector) return;
-                    
                     const newKeys = new Set();
                     
-                    // NippleJS Vector mapping: X is standard (positive right), Y is inverted standard (positive UP)
                     if(window.innerHeight > window.innerWidth){
                         if (data.vector.x > joyThreshold) newKeys.add('UP');
                         if (data.vector.x < -joyThreshold) newKeys.add('DOWN');
                         if (data.vector.y > joyThreshold) newKeys.add('LEFT');
                         if (data.vector.y < -joyThreshold) newKeys.add('RIGHT');
-                    }
-                    else{
+                    } else {
                         if (data.vector.x > joyThreshold) newKeys.add('RIGHT');
                         if (data.vector.x < -joyThreshold) newKeys.add('LEFT');
                         if (data.vector.y > joyThreshold) newKeys.add('UP');
-                        if (data.vector.y < -joyThreshold) newKeys.add('RIGHT');
+                        if (data.vector.y < -joyThreshold) newKeys.add('DOWN'); // Fixed inverted DOWN logic
                     }
-                    // Fire KeyDown for newly pressed directions
+                    
                     newKeys.forEach(key => {
                         if (!activeJoyKeys.has(key)) sendInput(key, 'keydown');
                     });
-
-                    // Fire KeyUp for directions we left
                     activeJoyKeys.forEach(key => {
                         if (!newKeys.has(key)) sendInput(key, 'keyup');
                     });
-
                     activeJoyKeys = newKeys;
                 });
 
@@ -368,30 +391,20 @@
                 });
             }
 
-
-            // Toggle function for the UI button
             window.toggleInputMethod = function() {
                 const dpad = document.getElementById('dpad-ui');
                 const joy = document.getElementById('joystick-ui');
                 const btn = document.getElementById('toggleInputBtn');
 
                 if (dpad.style.display !== 'none') {
-                    // Switch to Joystick
                     dpad.style.display = 'none';
                     joy.style.display = 'block';
                     btn.innerText = '➕ Use D-Pad';
-                    
-                    // CRITICAL FIX: Initialize the joystick ONLY AFTER it is visible
-                    if (!joystickInstance) {
-                        initJoystick();
-                    }
+                    if (!joystickInstance) initJoystick();
                 } else {
-                    // Switch back to D-Pad
                     dpad.style.display = 'grid'; 
                     joy.style.display = 'none';
                     btn.innerText = '🕹️ Use Joystick';
-                    
-                    // Cleanup any stuck inputs when switching away
                     activeJoyKeys.forEach(key => sendInput(key, 'keyup'));
                     activeJoyKeys.clear();
                 }
@@ -402,34 +415,51 @@
             // ==========================================
             peer.on('open', (myId) => {
                 const currentUrl = window.location.href.split('?')[0];
-                const linkP1 = `${currentUrl}?join=${myId}&p=1`;
-                const linkP2 = `${currentUrl}?join=${myId}&p=2`;
+                const link = `${currentUrl}?join=${myId}`; // Just the Host ID, no P1/P2 params
 
-                new QRCode(document.getElementById('qrcode-p1'), {
-                    text: linkP1, width: 150, height: 150, colorDark: "#000000", colorLight: "#ffffff"
-                });
-                new QRCode(document.getElementById('qrcode-p2'), {
-                    text: linkP2, width: 150, height: 150, colorDark: "#000000", colorLight: "#ffffff"
+                new QRCode(document.getElementById('qrcode'), {
+                    text: link, width: 180, height: 180, colorDark: "#000000", colorLight: "#ffffff"
                 });
 
                 peer.on('connection', (conn) => {
-                    const pNum = conn.metadata ? conn.metadata.player : null;
-
                     conn.on('open', () => {
-                        if (pNum === '1') {
-                            const p1Panel = document.getElementById('side-p1');
-                            p1Panel.style.opacity = '0';
-                            setTimeout(() => p1Panel.style.visibility = 'hidden', 500);
-                        } else if (pNum === '2') {
-                            const p2Panel = document.getElementById('side-p2');
-                            p2Panel.style.opacity = '0';
-                            setTimeout(() => p2Panel.style.visibility = 'hidden', 500);
+                        if (availableSlots.length > 0) {
+                            // Assign the lowest available slot
+                            const assignedNum = availableSlots.shift(); 
+                            activeClients[conn.peer] = assignedNum;
+
+                            // Notify the client of their assignment
+                            conn.send({ action: 'assign_player', playerNum: assignedNum });
+                            
+                            // Update Host UI
+                            document.getElementById(`status-p${assignedNum}`).innerText = 'Connected!';
+                        } else {
+                            // Reject if full
+                            conn.send({ action: 'full' });
+                            setTimeout(() => conn.close(), 500);
                         }
                     });
 
                     conn.on('data', (data) => {
-                        if(data.player && data.button && data.type) {
-                            triggerKeystroke(data.player, data.button, data.type);
+                        if (data.button && data.type) {
+                            // Look up which player this connection belongs to securely
+                            const pNum = activeClients[conn.peer];
+                            if (pNum) {
+                                triggerKeystroke(pNum.toString(), data.button, data.type);
+                            }
+                        }
+                    });
+
+                    conn.on('close', () => {
+                        const pNum = activeClients[conn.peer];
+                        if (pNum) {
+                            // Reclaim the slot
+                            availableSlots.push(pNum);
+                            availableSlots.sort(); // Ensure 1 comes before 2 if both drop
+                            delete activeClients[conn.peer];
+                            
+                            // Update Host UI
+                            document.getElementById(`status-p${pNum}`).innerText = 'Waiting...';
                         }
                     });
                 });
@@ -464,45 +494,32 @@
                 targetElement.dispatchEvent(event);
             }
 
+            // EmulatorJS Config
             window.EJS_defaultControls = {
                 0: { 
-                    0: { value: 'x' },         
-                    1: { value: 'z' },         
-                    2: { value: 'Shift' },     
-                    3: { value: 'Enter' },     
-                    4: { value: 'up arrow' },   
-                    5: { value: 'down arrow' }, 
-                    6: { value: 'left arrow' }, 
-                    7: { value: 'right arrow' },
-                    8: { value: 's' },         
-                    9: { value: 'a' }          
+                    0: { value: 'x' }, 1: { value: 'z' }, 2: { value: 'Shift' }, 3: { value: 'Enter' }, 
+                    4: { value: 'up arrow' }, 5: { value: 'down arrow' }, 6: { value: 'left arrow' }, 
+                    7: { value: 'right arrow' }, 8: { value: 's' }, 9: { value: 'a' }          
                 },
                 1: { 
-                    0: { value: 'g' }, 
-                    1: { value: 'f' }, 
-                    2: { value: 'b' }, 
-                    3: { value: 'v' }, 
-                    4: { value: 'i' }, 
-                    5: { value: 'k' }, 
-                    6: { value: 'j' }, 
-                    7: { value: 'l' }, 
-                    8: { value: 'h' }, 
-                    9: { value: 't' }  
-                }
+                    0: { value: 'g' }, 1: { value: 'f' }, 2: { value: 'b' }, 3: { value: 'v' }, 
+                    4: { value: 'i' }, 5: { value: 'k' }, 6: { value: 'j' }, 7: { value: 'l' }, 
+                    8: { value: 'h' }, 9: { value: 't' }   
+                },
+        2: {},
+        3: {}
             };
 
             window.EJS_player = '#game-container'; 
             window.EJS_core = 'psx';               
             window.EJS_gameName = 'Tekken 3';      
-            window.EJS_color = '#d32f2f';          
-            window.EJS_gameUrl = 'https://huggingface.co/datasets/alihxn/compressed_game/resolve/main/tekken3.chd';    
+            window.EJS_color = '#d32f2f';
+            window.EJS_gameUrl = 'https://huggingface.co/datasets/alihxn/compressed_game/resolve/main/tekken3.chd'; 
             window.EJS_biosUrl = 'scph5501.bin'; 
-            window.EJS_pathtodata = 'https://cdn.emulatorjs.org/latest/data/';
-
-            const script = document.createElement('script');
-            script.src = 'https://cdn.emulatorjs.org/latest/data/loader.js';
-            document.body.appendChild(script);
+            EJS_loadStateURL = "Tekken 3.state";
+            window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
         }
     </script>
+    <script src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
 </body>
 </html>
